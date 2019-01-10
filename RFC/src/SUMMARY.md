@@ -8,5 +8,5 @@
   - [RFC-0130: Mining](RFC-0130_Mining.md)
   - [RFC-0150: Wallets](RFC-0150_Wallets.md)
 - [RFC-0300: The Digital Assets Network](RFC-0300_DAN.md)
-  - [RFC-0310: Digital Asset templates](RFC-0310_Assets.md)
+  - [RFC-0310: Digital Asset templates](RFC-0310_AssetTemplates.md)
 - [Glossary](Glossary.md)

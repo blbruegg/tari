@@ -151,6 +151,11 @@ Mimblewimble is a privacy-centric cryptocurrency protocol. It was
 [dropped](https://download.wpsoftware.net/bitcoin/wizardry/mimblewimble.txt) in the Bitcoin Developers chatroom by an
 anonymous author and has since been refined by several authors, including Andrew Poelstra.
 
+## Permissioned Mode
+
+An asset runs in permissioned mode when _every_ validator node in a validator committee is a [Trusted Node].
+
+
 ## Range proof
 [range proof]: #range-proof
 
