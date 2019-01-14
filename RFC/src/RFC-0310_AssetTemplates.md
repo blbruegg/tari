@@ -72,7 +72,8 @@ complete or not) are manifold:
   to fixes migrating assets to a new version of the contract.
 * Contracts will have better QA since more eyes are looking at fewer contract code sets.
 * Transmission, storage and processing of contracts will be more efficient as one only has to deal with the parameters
-  and not the logic of the contract.
+  and not the logic of the contract. Furthermore, the cost for users is usually lower, since there's no need to add
+  friction / extra costs to contract execution (i.e. ethereum gas) to work around the halting problem.
 
 ### Implementation
 
@@ -115,11 +116,11 @@ Only the nodes in the trusted node set will be allowed to execute instructions f
 
 If `committee_mode` is `PERMISSIONLESS` the `committee_mode` object is
 
-| Name                | Type  | Description                                                                                                                       |
-|:--------------------|:------|:----------------------------------------------------------------------------------------------------------------------------------|
-| node_threshold      | `u32` | The total number of validator nodes that can register to execute instructions for this asset                                      |
-| minimum_collateral  | `u64` | The minimum amount of Tari a validator node must put up in collateral in order to execute instructions for this asset.([RFC-???]) |
-| node_selection_algo | `u32` | The selection algorithm to employ allowing nodes to register to manage this asset                                                 |
+| Name                    | Type  | Description                                                                                                                       |
+|:------------------------|:------|:----------------------------------------------------------------------------------------------------------------------------------|
+| node_threshold          | `u32` | The total number of validator nodes that can register to execute instructions for this asset                                      |
+| minimum_collateral      | `u64` | The minimum amount of Tari a validator node must put up in collateral in order to execute instructions for this asset.([RFC-???]) |
+| node_selection_strategy | `u32` | The selection strategy to employ allowing nodes to register to manage this asset                                                  |
 
 
 #### Issuer
@@ -164,7 +165,9 @@ the least significant bit.
 |:----------|:---------------------------------------|
 | 0 - 31    | Template number (0 - 4,294,967,295)    |
 | 32 - 47   | Template version (0 - 65,535)          |
-| 48 - 60   | Reserved  (Must be 0)                  |
+| 48 - 58   | Reserved  (Must be 0)                  |
+| 59        | Non-public nodes flag                  |
+| 60        | Confidentiality data flag              |
 | 61        | Proprietary contract flag              |
 | 62        | Public but non-community contract flag |
 | 63        | Beta Mode flag                         |
@@ -205,8 +208,11 @@ that you had a ticket for that epic World Cup final game, even after the asset n
 
 Nodes will publish a final checkpoint on the base layer soon after expiry and before purging an asset.
 
-The expiry_date is a Unix epoch, representing the number of seconds since 1 January 1970 00:00:00 UTC if the value is greater than 1,500,000,000; or a block height if it is less than that value (with 1 min blocks this scheme is valid until the year 4870).
+The expiry_date is a Unix epoch, representing the number of seconds since 1 January 1970 00:00:00 UTC if the value is
+greater than 1,500,000,000; or a block height if it is less than that value (with 1 min blocks this scheme is valid
+until the year 4870).
 
-Expiry times should not be considered exact, since nodes don’t share the same clocks and blockheights as time proxies become more inaccurate the further out you go (since height in the future is dependent on hash rate).
+Expiry times should not be considered exact, since nodes don’t share the same clocks and block heights as time proxies
+become more inaccurate the further out you go (since height in the future is dependent on hash rate).
 
 [permissioned mode]: Glossary.md#permissioned-mode
