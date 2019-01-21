@@ -40,7 +40,8 @@ use rand::{CryptoRng, Rng};
 ///
 /// ## Creating secret keys
 /// [ByteArray](trait.ByteArray.html) and [SecretKeyFactory](trait.SecretKeyFactory.html) are implemented for
-/// [SecretKey](struct .SecretKey.html), so any of the following work (note that hex strings and byte array are little-endian):
+/// [SecretKey](struct .SecretKey.html), so any of the following work (note that hex strings and byte array are
+/// little-endian):
 ///
 /// ```edition2018
 /// use crypto::ristretto::RistrettoSecretKey as SecretKey;
