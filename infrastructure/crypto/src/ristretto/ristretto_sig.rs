@@ -20,4 +20,36 @@
 // WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
 // USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-pub struct RistrettoSignature {}
+use crate::{
+    ristretto::{RistrettoPublicKey, RistrettoSecretKey},
+    signatures::SchnorrSignature,
+};
+use curve25519_dalek::{ristretto::RistrettoPoint, scalar::Scalar};
+
+pub struct RistrettoSignature {
+    public_nonce: RistrettoPoint,
+    sig: Scalar,
+}
+
+impl SchnorrSignature for RistrettoSignature {
+    type K = RistrettoSecretKey;
+    type P = RistrettoPublicKey;
+
+    fn R(&self) -> RistrettoPublicKey {
+        RistrettoPublicKey::new_from_pk(self.public_nonce)
+    }
+
+    fn s(&self) -> RistrettoSecretKey {
+        RistrettoSecretKey(self.sig.clone())
+    }
+
+    fn sign(secret: &RistrettoSecretKey, public: &RistrettoPublicKey, m: &[u8]) -> RistrettoSignature {
+        // s = r + k.e
+        unimplemented!()
+    }
+
+    fn verify(&self, public: &RistrettoPublicKey, m: &[u8]) -> bool {
+        // check s.G == R + e.P
+        unimplemented!()
+    }
+}

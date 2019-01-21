@@ -114,7 +114,7 @@ pub struct RistrettoPublicKey {
 
 impl RistrettoPublicKey {
     // Private constructor
-    fn new_from_pk(pk: RistrettoPoint) -> RistrettoPublicKey {
+    pub(crate) fn new_from_pk(pk: RistrettoPoint) -> RistrettoPublicKey {
         RistrettoPublicKey { point: pk, compressed: pk.compress() }
     }
 }
