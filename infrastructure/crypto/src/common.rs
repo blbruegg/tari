@@ -30,6 +30,8 @@ pub enum ByteArrayError {
     ConversionError(String),
     // Invalid hex representation for ByteArray
     HexConversionError(HexError),
+    // The input data was the incorrect length to perform the desired conversion
+    IncorrectLength,
 }
 
 /// Many of the types in this crate are just large numbers (256 bit usually). This trait provides the common

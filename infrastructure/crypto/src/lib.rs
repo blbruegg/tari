@@ -5,3 +5,4 @@ pub mod signatures;
 
 // Implementations
 pub mod curve25519;
+pub mod ristretto;
