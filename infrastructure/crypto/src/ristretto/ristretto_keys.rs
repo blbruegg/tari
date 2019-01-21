@@ -35,12 +35,12 @@ use curve25519_dalek::{
 };
 use rand::{CryptoRng, Rng};
 
-/// The [SecretKey](struct.SecretKey.html) implementation for [Ristretto](https://ristretto.group) is a thin wrapper
+/// The [SecretKey](trait.SecretKey.html) implementation for [Ristretto](https://ristretto.group) is a thin wrapper
 /// around the Dalek [Scalar](struct.Scalar.html) type, representing a 256-bit integer (mod the group order).
 ///
 /// ## Creating secret keys
-/// [ByteArray](trait.ByteArray.html) and [SecretKeyFactory](trait.SecretKeyFactory.html) is implemented for [SecretKey]
-/// (struct .SecretKey.html), so any of the following work (note that hex strings and byte array are little-endian):
+/// [ByteArray](trait.ByteArray.html) and [SecretKeyFactory](trait.SecretKeyFactory.html) are implemented for
+/// [SecretKey](struct .SecretKey.html), so any of the following work (note that hex strings and byte array are little-endian):
 ///
 /// ```edition2018
 /// use crypto::ristretto::RistrettoSecretKey as SecretKey;
@@ -59,6 +59,9 @@ pub struct RistrettoSecretKey(pub(crate) Scalar);
 impl SecretKey for RistrettoSecretKey {}
 
 impl ByteArray for RistrettoSecretKey {
+    /// Create a secret key on the Ristretto255 curve using the given little-endian byte array. If the byte array is
+    /// not exactly 32 bytes long, `from_bytes` returns an error. This function is guaranteed to return a valid key
+    /// in the group since it performs a mod _l_ on the input.
     fn from_bytes(bytes: &[u8]) -> Result<RistrettoSecretKey, ByteArrayError>
     where Self: Sized {
         if bytes.len() != 32 {
@@ -70,17 +73,38 @@ impl ByteArray for RistrettoSecretKey {
         Ok(RistrettoSecretKey(k))
     }
 
+    /// Return the byte array for the secret key in little-endian order
     fn to_bytes(&self) -> &[u8] {
         self.0.as_bytes()
     }
 }
 
+/// Return a random secret key on the `ristretto255` curve using the supplied CSPRNG.
 impl SecretKeyFactory for RistrettoSecretKey {
     fn random<R: CryptoRng + Rng>(rng: &mut R) -> Self {
         RistrettoSecretKey(Scalar::random(rng))
     }
 }
 
+/// The [PublicKey](trait.PublicKey.html) implementation for `ristretto255` is a thin wrapper around the dalek
+/// library's [RistrettoPoint](struct.RistrettoPoint.html).
+///
+/// ## Creating public keys
+/// Both [PublicKey](trait.PublicKey.html) and [ByteArray](trait.ByteArray.html) are implemented on
+/// `RistrettoPublicKey` so all of the following will work:
+/// ```edition2018
+/// use crypto::ristretto::{ RistrettoPublicKey, RistrettoSecretKey as SecretKey };
+/// use crypto::common::ByteArray;
+/// use crypto::keys::{ PublicKey, SecretKeyFactory };
+/// use rand;
+///
+/// let mut rng = rand::OsRng::new().unwrap();
+/// let _p1 = RistrettoPublicKey::from_bytes(&[224, 196, 24, 247, 200, 217, 196, 205, 215, 57, 91, 147, 234, 18, 79, 58, 217,
+/// 144, 33, 187, 104, 29, 252, 51, 2, 169, 217, 154, 46, 83, 230, 78]);
+/// let _p2 = RistrettoPublicKey::from_hex(&"e882b131016b52c1d3337080187cf768423efccbb517bb495ab812c4160ff44e");
+/// let sk = SecretKey::random(&mut rng);
+/// let _p3 = RistrettoPublicKey::from_secret_key(&sk);
+/// ```
 #[derive(Clone, Debug)]
 pub struct RistrettoPublicKey {
     point: RistrettoPoint,
@@ -88,6 +112,7 @@ pub struct RistrettoPublicKey {
 }
 
 impl RistrettoPublicKey {
+    // Private constructor
     fn new_from_pk(pk: RistrettoPoint) -> RistrettoPublicKey {
         RistrettoPublicKey { point: pk, compressed: pk.compress() }
     }
@@ -96,6 +121,7 @@ impl RistrettoPublicKey {
 impl PublicKey for RistrettoPublicKey {
     type K = RistrettoSecretKey;
 
+    /// Generates a new Public key from the given secret key
     fn from_secret_key(k: &Self::K) -> RistrettoPublicKey {
         let pk = &k.0 * &RISTRETTO_BASEPOINT_TABLE;
         RistrettoPublicKey::new_from_pk(pk)
@@ -111,6 +137,10 @@ impl PartialEq for RistrettoPublicKey {
 impl Eq for RistrettoPublicKey {}
 
 impl ByteArray for RistrettoPublicKey {
+    /// Create a new `RistrettoPublicKey` instance form the given byte array. The constructor returns errors under
+    /// the following circumstances:
+    /// * The byte array is not exactly 32 bytes
+    /// * The byte array does not represent a valid (compressed) point on the ristretto255 curve
     fn from_bytes(bytes: &[u8]) -> Result<RistrettoPublicKey, ByteArrayError>
     where Self: Sized {
         // Check the length here, because The Ristretto constructor panics rather than returning an error
@@ -124,6 +154,7 @@ impl ByteArray for RistrettoPublicKey {
         }
     }
 
+    /// Return the little-endian byte array representation of the compressed public key
     fn to_bytes(&self) -> &[u8] {
         self.compressed.as_bytes()
     }
