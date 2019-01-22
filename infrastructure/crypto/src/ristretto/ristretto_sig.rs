@@ -21,35 +21,85 @@
 // USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 use crate::{
+    keys::PublicKey,
     ristretto::{RistrettoPublicKey, RistrettoSecretKey},
     signatures::SchnorrSignature,
 };
-use curve25519_dalek::{ristretto::RistrettoPoint, scalar::Scalar};
+use curve25519_dalek::scalar::Scalar;
 
-pub struct RistrettoSignature {
-    public_nonce: RistrettoPoint,
-    sig: Scalar,
+#[allow(non_snake_case)]
+#[derive(PartialEq, Eq, Copy, Debug, Clone)]
+pub struct RistrettoSchnorr {
+    R: RistrettoPublicKey,
+    s: RistrettoSecretKey,
 }
 
-impl SchnorrSignature for RistrettoSignature {
-    type K = RistrettoSecretKey;
-    type P = RistrettoPublicKey;
+impl SchnorrSignature for RistrettoSchnorr {
+    type Challenge = [u8; 32];
+    type Point = RistrettoPublicKey;
+    type Scalar = RistrettoSecretKey;
 
-    fn R(&self) -> RistrettoPublicKey {
-        RistrettoPublicKey::new_from_pk(self.public_nonce)
+    fn new(public_nonce: RistrettoPublicKey, signature: RistrettoSecretKey) -> Self {
+        RistrettoSchnorr { R: public_nonce, s: signature }
     }
 
-    fn s(&self) -> RistrettoSecretKey {
-        RistrettoSecretKey(self.sig.clone())
+    fn sign(secret: &RistrettoSecretKey, nonce: &RistrettoSecretKey, challenge: [u8; 32]) -> RistrettoSchnorr {
+        // s = r + e.k
+        let e = Scalar::from_bytes_mod_order(challenge);
+        let s = &nonce.0 + &(&secret.0 * &e);
+        let public_nonce = RistrettoPublicKey::from_secret_key(nonce);
+        RistrettoSchnorr { R: public_nonce, s: RistrettoSecretKey(s) }
     }
 
-    fn sign(secret: &RistrettoSecretKey, public: &RistrettoPublicKey, m: &[u8]) -> RistrettoSignature {
-        // s = r + k.e
-        unimplemented!()
+    fn verify(&self, public_key: &RistrettoPublicKey, public_nonce: &RistrettoPublicKey, challenge: &[u8; 32]) -> bool {
+        let lhs = RistrettoPublicKey::from_secret_key(&self.s);
+        let mut e = [0u8; 32];
+        e.copy_from_slice(challenge);
+        let e = Scalar::from_bytes_mod_order(e);
+        let rhs = &public_nonce.point + &(&e * &public_key.point);
+        lhs.point == rhs
     }
 
-    fn verify(&self, public: &RistrettoPublicKey, m: &[u8]) -> bool {
-        // check s.G == R + e.P
-        unimplemented!()
+    fn get_signature(&self) -> &RistrettoSecretKey {
+        &self.s
+    }
+
+    fn get_public_nonce(&self) -> &RistrettoPublicKey {
+        &self.R
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::{
+        challenge::Challenge,
+        common::{Blake256, ByteArray},
+        keys::{PublicKey, SecretKeyFactory},
+        ristretto::{RistrettoPublicKey, RistrettoSchnorr, RistrettoSecretKey},
+        signatures::SchnorrSignature,
+    };
+    use rand;
+
+    fn get_keypair() -> (RistrettoSecretKey, RistrettoPublicKey) {
+        let mut rng = rand::OsRng::new().unwrap();
+        let k = RistrettoSecretKey::random(&mut rng);
+        let pk = RistrettoPublicKey::from_secret_key(&k);
+        (k, pk)
+    }
+
+    #[test]
+    #[allow(non_snake_case)]
+    fn sign_and_verify_message() {
+        let (k, P) = get_keypair();
+        let (r, R) = get_keypair();
+        let c = Challenge::<Blake256>::new();
+        let e = c.concat(P.to_bytes()).concat(R.to_bytes()).concat(b"Small Gods");
+        let e: [u8; 32] = e.into();
+        let sig = RistrettoSchnorr::sign(&k.into(), &r.into(), e);
+        let s_calc = sig.get_signature();
+        let R_calc = sig.get_public_nonce();
+        assert_eq!(R, *R_calc);
+        println!("sig: {}\nmsg: {:?}", s_calc.to_hex(), e);
+        assert!(sig.verify(&P, &R, &e));
     }
 }

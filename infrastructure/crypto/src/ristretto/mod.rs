@@ -26,5 +26,5 @@ pub mod ristretto_sig;
 // Re-export
 pub use self::{
     ristretto_keys::{RistrettoPublicKey, RistrettoSecretKey},
-    ristretto_sig::RistrettoSignature,
+    ristretto_sig::RistrettoSchnorr,
 };

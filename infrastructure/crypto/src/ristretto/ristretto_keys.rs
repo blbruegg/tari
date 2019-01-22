@@ -54,10 +54,17 @@ use rand::{CryptoRng, Rng};
 /// let _k2 = SecretKey::from_hex(&"100000002000000030000000040000000");
 /// let _k3 = SecretKey::random(&mut rng);
 /// ```
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub struct RistrettoSecretKey(pub(crate) Scalar);
 
-impl SecretKey for RistrettoSecretKey {}
+const SCALAR_LENGTH: usize = 32;
+const PUBLIC_KEY_LENGTH: usize = 32;
+
+impl SecretKey for RistrettoSecretKey {
+    fn key_length() -> usize {
+        SCALAR_LENGTH
+    }
+}
 
 impl ByteArray for RistrettoSecretKey {
     /// Create a secret key on the Ristretto255 curve using the given little-endian byte array. If the byte array is
@@ -106,10 +113,10 @@ impl SecretKeyFactory for RistrettoSecretKey {
 /// let sk = SecretKey::random(&mut rng);
 /// let _p3 = RistrettoPublicKey::from_secret_key(&sk);
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct RistrettoPublicKey {
-    point: RistrettoPoint,
-    compressed: CompressedRistretto,
+    pub(crate) point: RistrettoPoint,
+    pub(crate) compressed: CompressedRistretto,
 }
 
 impl RistrettoPublicKey {
@@ -126,6 +133,10 @@ impl PublicKey for RistrettoPublicKey {
     fn from_secret_key(k: &Self::K) -> RistrettoPublicKey {
         let pk = &k.0 * &RISTRETTO_BASEPOINT_TABLE;
         RistrettoPublicKey::new_from_pk(pk)
+    }
+
+    fn key_length() -> usize {
+        PUBLIC_KEY_LENGTH
     }
 }
 
@@ -158,6 +169,24 @@ impl ByteArray for RistrettoPublicKey {
     /// Return the little-endian byte array representation of the compressed public key
     fn to_bytes(&self) -> &[u8] {
         self.compressed.as_bytes()
+    }
+}
+
+impl From<RistrettoSecretKey> for Scalar {
+    fn from(k: RistrettoSecretKey) -> Self {
+        k.0
+    }
+}
+
+impl From<RistrettoPublicKey> for RistrettoPoint {
+    fn from(pk: RistrettoPublicKey) -> Self {
+        pk.point
+    }
+}
+
+impl From<RistrettoPublicKey> for CompressedRistretto {
+    fn from(pk: RistrettoPublicKey) -> Self {
+        pk.compressed
     }
 }
 
